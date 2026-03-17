@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proxy Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 0;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #00d4ff, #0099ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            color: #aaa;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(0, 212, 255, 0.5);
+            transform: translateY(-5px);
+        }
+
+        .card-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+
+        .card h2 {
+            font-size: 1.3em;
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            color: #aaa;
+            font-size: 0.95em;
+        }
+
+        button {
+            background: linear-gradient(135deg, #00d4ff, #0099ff);
+            color: #000;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1em;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: scale(1);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-item {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #aaa;
+            margin-top: 5px;
+        }
+
+        .proxies-list {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .proxy-item {
+            background: rgba(0, 212, 255, 0.05);
+            border-left: 3px solid #00d4ff;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .proxy-ip {
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        .proxy-ping {
+            color: #00d4ff;
+            font-size: 0.9em;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 212, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #00d4ff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            color: #0f0;
+        }
+
+        .message.error {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            color: #f00;
+        }
+
+        .message.info {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            color: #0dd;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌐 Proxy Manager</h1>
+            <p class="subtitle">Профессиональный менеджер прокси с проверкой и анализом</p>
+        </header>
+
+        <div id="message"></div>
+
+        <!-- ЗАГРУЗКА -->
+        <div class="section">
+            <h2 class="section-title">📥 Загрузка прокси</h2>
+            <div class="grid">
+                <div class="card">
+                    <div class="card-icon">📁</div>
+                    <h2>Из файла</h2>
+                    <p>Загрузи прокси из файла proxies.txt</p>
+                    <button onclick="loadFromFile()">Загрузить</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">🌐</div>
+                    <h2>Из API</h2>
+                    <p>Загрузи свежие прокси из API</p>
+                    <button onclick="loadFromAPI()">Загрузить</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">📥</div>
+                    <h2>Оба сразу</h2>
+                    <p>Загрузи из файла и API одновременно</p>
+                    <button onclick="loadBoth()">Загрузить</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ПРОВЕРКА -->
+        <div class="section">
+            <h2 class="section-title">🔍 Проверка</h2>
+            <div class="card">
+                <div class="card-icon">⚡</div>
+                <h2>Проверить прокси</h2>
+                <p>Проверь работоспособность всех загруженных прокси (займет 1-2 минуты)</p>
+                <button onclick="checkProxies()">Начать проверку</button>
+            </div>
+        </div>
+
+        <!-- СТАТИСТИКА -->
+        <div class="section">
+            <h2 class="section-title">📊 Статистика</h2>
+            <div id="stats" class="stats" style="display: none;">
+                <div class="stat-item">
+                    <div class="stat-value" id="stat-total">0</div>
+                    <div class="stat-label">Всего проверено</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="stat-working">0</div>
+                    <div class="stat-label">Работающих</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="stat-failed">0</div>
+                    <div class="stat-label">Не работает</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="stat-success">0%</div>
+                    <div class="stat-label">Успех</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="stat-ping">0ms</div>
+                    <div class="stat-label">Средний пинг</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ЛУЧШИЙ ПРОКСИ -->
+        <div class="section">
+            <h2 class="section-title">⭐ Лучший прокси</h2>
+            <div id="best-proxy" class="card" style="display: none;">
+                <div class="card-icon">✨</div>
+                <div>
+                    <p style="color: #aaa; margin-bottom: 10px;">IP:PORT</p>
+                    <code id="best-proxy-ip" style="font-size: 1.3em; color: #00d4ff;"></code>
+                    <p style="color: #aaa; margin-top: 15px; margin-bottom: 5px;">Пинг</p>
+                    <p id="best-proxy-ping" style="font-size: 1.2em; color: #00d4ff;"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ТОП ПРОКСИ -->
+        <div class="section">
+            <h2 class="section-title">🏆 Топ прокси</h2>
+            <div class="grid">
+                <button onclick="getTopProxies(5)">Топ-5</button>
+                <button onclick="getTopProxies(10)">Топ-10</button>
+                <button onclick="getTopProxies(20)">Топ-20</button>
+            </div>
+            <div id="top-proxies" class="proxies-list" style="display: none;">
+                <h3 style="margin-bottom: 15px;">Лучшие прокси:</h3>
+                <div id="proxies-container"></div>
+            </div>
+        </div>
+
+        <!-- СОХРАНЕНИЕ -->
+        <div class="section">
+            <h2 class="section-title">💾 Сохранение</h2>
+            <button onclick="saveResults()" style="max-width: 200px;">Сохранить результаты</button>
+        </div>
+    </div>
+
+    <script>
+        // Показать сообщение
+        function showMessage(text, type = 'info') {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = `message ${type}`;
+            msg.style.display = 'block';
+            setTimeout(() => msg.style.display = 'none', 5000);
+        }
+
+        // Загрузить из файла
+        async function loadFromFile() {
+            try {
+                showMessage('⏳ Загружаю из файла...', 'info');
+                const res = await fetch('/api/load-proxies', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ source: 'file' })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showMessage(`✅ Загружено ${data.file_count} прокси из файла!`, 'success');
+                } else {
+                    showMessage(`❌ Ошибка: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showMessage(`❌ Ошибка: ${e}`, 'error');
+            }
+        }
+
+        // Загрузить из API
+        async function loadFromAPI() {
+            try {
+                showMessage('⏳ Загружаю из API...', 'info');
+                const res = await fetch('/api/load-proxies', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ source: 'api' })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showMessage(`✅ Загружено ${data.api_count} прокси из API!`, 'success');
+                } else {
+                    showMessage(`❌ Ошибка: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showMessage(`❌ Ошибка: ${e}`, 'error');
+            }
+        }
+
+        // Загрузить оба
+        async function loadBoth() {
+            try {
+                showMessage('⏳ Загружаю из файла и API...', 'info');
+                const res = await fetch('/api/load-proxies', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ source: 'both' })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showMessage(`✅ Загружено ${data.total} прокси!`, 'success');
+                } else {
+                    showMessage(`❌ Ошибка: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showMessage(`❌ Ошибка: ${e}`, 'error');
+            }
+        }
+
+        // Проверить прокси
+        async function checkProxies() {
+            try {
+                showMessage('⏳ Проверяю прокси (это займет время)...', 'info');
+                const res = await fetch('/api/check-proxies', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    showMessage(`✅ Проверка завершена! Работающих: ${data.working}/${data.total}`, 'success');
+                    updateStats();
+                } else {
+                    showMessage(`❌ Ошибка: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showMessage(`❌ Ошибка: ${e}`, 'error');
+            }
+        }
+
+        // Обновить статистику
+        async function updateStats() {
+            try {
+                const res = await fetch('/api/statistics');
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('stat-total').textContent = data.total;
+                    document.getElementById('stat-working').textContent = data.working;
+                    document.getElementById('stat-failed').textContent = data.failed;
+                    document.getElementById('stat-success').textContent = data.success_rate + '%';
+                    document.getElementById('stat-ping').textContent = data.avg_ping + 'ms';
+                    document.getElementById('stats').style.display = 'grid';
+
+                    // Показать лучший прокси
+                    document.getElementById('best-proxy-ip').textContent = data.best_proxy;
+                    document.getElementById('best-proxy-ping').textContent = data.best_ping + ' ms';
+                    document.getElementById('best-proxy').style.display = 'block';
+                }
+            } catch (e) {
+                console.error('Ошибка:', e);
+            }
+        }
+
+        // Получить топ прокси
+        async function getTopProxies(count) {
+            try {
+                const res = await fetch(`/api/top-proxies/${count}`);
+                const data = await res.json();
+                if (data.success) {
+                    let html = '';
+                    data.proxies.forEach((p, i) => {
+                        html += `
+                            <div class="proxy-item">
+                                <span>${i + 1}. <span class="proxy-ip">${p.proxy}</span></span>
+                                <span class="proxy-ping">⚡ ${p.ping}ms</span>
+                            </div>
+                        `;
+                    });
+                    document.getElementById('proxies-container').innerHTML = html;
+                    document.getElementById('top-proxies').style.display = 'block';
+                } else {
+                    showMessage(`❌ Ошибка: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showMessage(`❌ Ошибка: ${e}`, 'error');
+            }
+        }
+
+        // Сохранить результаты
+        async function saveResults() {
+            try {
+                const res = await fetch('/api/save-results', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    showMessage('✅ Результаты сохранены в results.json!', 'success');
+                } else {
+                    showMessage(`❌ Ошибка: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                showMessage(`❌ Ошибка: ${e}`, 'error');
+            }
+        }
+
+        // Инициализация
+        updateStats();
+    </script>
+</body>
+</html>
